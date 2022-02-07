@@ -3,7 +3,7 @@ from numpy import MAY_SHARE_EXACT
 import rospy
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-from math import pow, atan2, sqrt
+from math import pow, atan2, radians, sqrt
 
 
 class TurtleBot_Dee:
@@ -23,7 +23,7 @@ class TurtleBot_Dee:
                                                 Pose, self.update_pose)
 
         self.pose = Pose()
-        self.rate = rospy.Rate(10)
+        self.rate = rospy.Rate(50)
 
     def update_pose(self, data):
         """Callback function which is called when a new message of type Pose is
@@ -31,7 +31,7 @@ class TurtleBot_Dee:
         self.pose = data
         self.pose.x = round(self.pose.x, 4)
         self.pose.y = round(self.pose.y, 4)
-        
+        self.pose.theta = self.pose.theta
 
     def euclidean_distance(self, goal_pose):
         """Euclidean distance between current pose and the goal."""
@@ -90,12 +90,55 @@ class TurtleBot_Dee:
         vel_msg.angular.z = 0
         self.velocity_publisher.publish(vel_msg)
 
-        # If we press control + C, the node will stop.
-        #rospy.spin()
+
+    def align_turtle(self):
+
+            vel_msg = Twist()
+
+            while abs(self.pose.theta) >= 0.1:
+                vel_msg.linear.x = 0
+                vel_msg.linear.y = 0
+                vel_msg.linear.z = 0
+                vel_msg.angular.x = 0
+                vel_msg.angular.y = 0
+                vel_msg.angular.z = radians(30)
+                self.velocity_publisher.publish(vel_msg)
+                self.rate.sleep()
+            # Stopping our robot after the movement is over.
+            vel_msg.angular.z = 0
+            self.velocity_publisher.publish(vel_msg)
 
 if __name__ == '__main__':
     try:
+        # Initialize the node and name it.
+        rospy.init_node('turtlebot_controller', anonymous=True)
+
+        x_start = float(input("Set your x start: "))
+        y_start = float(input("Set your y start: "))
+
         x = TurtleBot_Dee()
-        x.move2goal(1,1,0.1)
+        x.move2goal(x_start,y_start,0.1)
+        x.align_turtle()
+
+        user_a = float(input("Input a: "))
+        user_b = float(input("Input b: "))
+
+        point_1 = [user_a,0]
+        point_2 = [user_a,user_b]
+        point_3 = [0,user_b] 
+        point_4 = [0,2*user_b]
+        point_5 = [user_a,2*user_b]
+
+
+        distance_tolerance = 0.1
+        x.move2goal(point_1[0],point_1[1],distance_tolerance)
+        x.move2goal(point_2[0],point_2[1],distance_tolerance)
+        x.move2goal(point_3[0],point_3[1],distance_tolerance)
+        x.move2goal(point_4[0],point_4[1],distance_tolerance)
+        x.move2goal(point_5[0],point_5[1],distance_tolerance)
+
+        x.move2goal(x_start,y_start,distance_tolerance)
+
+
     except rospy.ROSInterruptException:
         pass

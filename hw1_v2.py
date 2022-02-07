@@ -40,10 +40,14 @@ def move_custom(goal_cord, distance_tolerance):
     while(True):
 
         rospy.Subscriber('/turtle1/pose', Pose, poseCallback)
-        
         current_cord = [x,y]
 
+        
+
         distance = euclidean_distance(goal_cord, current_cord)
+
+        
+        
 
         rospy.loginfo("Distance to goal: %f", distance)
 
@@ -52,6 +56,8 @@ def move_custom(goal_cord, distance_tolerance):
             break
         else:
             linear_speed = 1
+
+       
 
         vel_msg.linear.x = linear_speed
 
@@ -62,7 +68,7 @@ def move_custom(goal_cord, distance_tolerance):
 
     velocity_publisher.publish(vel_msg)
 
-def rotate_custom(input_angle,angle_tolerance):
+def rotate_custom(input_angle,angle_tolerance,clockwise):
 
     global yaw
 
@@ -82,7 +88,9 @@ def rotate_custom(input_angle,angle_tolerance):
         current_angle = yaw
 
         #offset = ((current_angle + input_angle) - current_angle) % (2*pi)
-        offset = radians(current_angle - input_angle) % (2*pi)
+        offset = (current_angle - radians(input_angle)) % (2*pi)
+
+
         rospy.loginfo("Offset angle: %f", offset)
 
         if offset < angle_tolerance:
@@ -91,10 +99,13 @@ def rotate_custom(input_angle,angle_tolerance):
         else:
             angular_speed = radians(30)
 
-        vel_msg.angular.z = angular_speed
+        if clockwise:
+            vel_msg.angular.z = -abs(angular_speed)
+        else:
+            vel_msg.angular.z = abs(angular_speed)
 
         velocity_publisher.publish(vel_msg)
-        looprate.sleep()
+        #looprate.sleep()
 
 
     vel_msg.linear.x = angular_speed
@@ -120,9 +131,9 @@ if __name__ == '__main__':
         distance_tolerance = 0.01
 
         move_custom(goal_1_cord,distance_tolerance)
-        rotate_custom(radians(90),0.01)
+        rotate_custom(90,0.01,False)
         rospy.sleep(1)
         move_custom(goal_2_cord,distance_tolerance)
-        rotate_custom(radians(90),0.01)
+        rotate_custom(90,0.01,False)
 
     except rospy.ROSInterruptException: pass
