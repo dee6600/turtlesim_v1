@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+from turtle import right
 from numpy import MAY_SHARE_EXACT
 import rospy
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-from math import pow, atan2, radians, sqrt
+from math import pow, atan2, radians, sqrt, sin , cos
 
 
 class TurtleBot_Dee:
@@ -23,7 +24,7 @@ class TurtleBot_Dee:
                                                 Pose, self.update_pose)
 
         self.pose = Pose()
-        self.rate = rospy.Rate(50)
+        self.rate = rospy.Rate(100)
 
     def update_pose(self, data):
         """Callback function which is called when a new message of type Pose is
@@ -91,22 +92,91 @@ class TurtleBot_Dee:
         self.velocity_publisher.publish(vel_msg)
 
 
-    def align_turtle(self):
+    def align_turtle(self, direction):
 
             vel_msg = Twist()
 
-            while abs(self.pose.theta) >= 0.1:
-                vel_msg.linear.x = 0
-                vel_msg.linear.y = 0
-                vel_msg.linear.z = 0
-                vel_msg.angular.x = 0
-                vel_msg.angular.y = 0
-                vel_msg.angular.z = radians(30)
+            if direction == "right":
+                while abs(self.pose.theta) >= 0.0001:
+                    rospy.loginfo("angle: %f", self.pose.theta)
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = radians(80) * abs(self.pose.theta)
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
                 self.velocity_publisher.publish(vel_msg)
-                self.rate.sleep()
-            # Stopping our robot after the movement is over.
+
+            if direction == 'up':
+                while abs(self.pose.theta) <= 90.0001:
+                    rospy.loginfo("angle: %f", self.pose.theta)
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = radians(80) * abs(self.pose.theta)
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
+                self.velocity_publisher.publish(vel_msg) 
+
+    def custom_rotate(self, relative_angle):
+
+        vel_msg = Twist()
+
+        theta0 = self.pose.theta
+
+        angular_speed = 30
+
+        angle_moved = 0
+
+        t0 = rospy.Time.now().to_sec()
+
+        while True:
+            t1 = rospy.Time.now().to_sec()
+            current_angle = (t1-t0) * angular_speed
+            rospy.loginfo("current_angle: %f", current_angle)
+            if (current_angle >= relative_angle):
+                break
+
+            vel_msg.angular.z = radians(angular_speed)
+            self.velocity_publisher.publish(vel_msg)
+            
+
+        vel_msg.angular.z = 0
+        self.velocity_publisher.publish(vel_msg)    
+
+    def custom_move(self, distance):
+
+        vel_msg = Twist()
+
+        distance_moved = 0
+
+        x0 = self.pose.x
+        y0 = self.pose.y
+        
+        while True:
+            vel_msg.linear.x = 1
+            vel_msg.linear.y = 0
+            vel_msg.linear.z = 0
+            vel_msg.angular.x = 0
+            vel_msg.angular.y = 0
             vel_msg.angular.z = 0
             self.velocity_publisher.publish(vel_msg)
+            #self.rate.sleep()
+            distance_moved = abs(sqrt(((self.pose.x - x0)**2) + ((self.pose.y - y0)**2)))
+            if not (distance_moved < distance):
+                break
+
+        vel_msg.linear.x = 0    
+        self.velocity_publisher.publish(vel_msg)
+        
 
 if __name__ == '__main__':
     try:
@@ -117,27 +187,29 @@ if __name__ == '__main__':
         y_start = float(input("Set your y start: "))
 
         x = TurtleBot_Dee()
-        x.move2goal(x_start,y_start,0.1)
-        x.align_turtle()
+
+        distance_tolerance = 0.01
+
+        x.move2goal(x_start,y_start,distance_tolerance)
+        x.align_turtle(direction = "right")
 
         user_a = float(input("Input a: "))
         user_b = float(input("Input b: "))
 
-        point_1 = [user_a,0]
-        point_2 = [user_a,user_b]
-        point_3 = [0,user_b] 
-        point_4 = [0,2*user_b]
-        point_5 = [user_a,2*user_b]
+        current_pose = Pose()
 
+        point_1 = [x_start + user_a, y_start]
+        x.custom_move(user_a)
+        #x.move2goal(point_1[0],point_1[1],distance_tolerance)
+        x.custom_rotate(90)
 
-        distance_tolerance = 0.1
-        x.move2goal(point_1[0],point_1[1],distance_tolerance)
-        x.move2goal(point_2[0],point_2[1],distance_tolerance)
-        x.move2goal(point_3[0],point_3[1],distance_tolerance)
-        x.move2goal(point_4[0],point_4[1],distance_tolerance)
-        x.move2goal(point_5[0],point_5[1],distance_tolerance)
+        #point_2 = [x_start + user_a, y_start + user_b]
+        # x.move2goal(point_2[0],point_2[1],distance_tolerance)
+        # x.move2goal(point_3[0],point_3[1],distance_tolerance)
+        # x.move2goal(point_4[0],point_4[1],distance_tolerance)
+        # x.move2goal(point_5[0],point_5[1],distance_tolerance)
 
-        x.move2goal(x_start,y_start,distance_tolerance)
+        # x.move2goal(x_start,y_start,distance_tolerance)
 
 
     except rospy.ROSInterruptException:
