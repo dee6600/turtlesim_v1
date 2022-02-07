@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+from re import A
 from turtle import right
 from numpy import MAY_SHARE_EXACT
 import rospy
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-from math import pow, atan2, radians, sqrt, sin , cos
+from math import degrees, pow, atan2, radians, sqrt, pi, atan
 
 
 class TurtleBot_Dee:
@@ -92,11 +93,11 @@ class TurtleBot_Dee:
         self.velocity_publisher.publish(vel_msg)
 
 
-    def align_turtle(self, direction):
+    def align_turtle(self,direction):
 
             vel_msg = Twist()
 
-            if direction == "right":
+            if direction == "anti_right":
                 while abs(self.pose.theta) >= 0.0001:
                     rospy.loginfo("angle: %f", self.pose.theta)
                     vel_msg.linear.x = 0
@@ -111,21 +112,113 @@ class TurtleBot_Dee:
                 vel_msg.angular.z = 0
                 self.velocity_publisher.publish(vel_msg)
 
-            if direction == 'up':
-                while abs(self.pose.theta) <= 90.0001:
-                    rospy.loginfo("angle: %f", self.pose.theta)
+            if direction == 'anti_up':
+                while abs(self.pose.theta) <= radians(90):
+                    rospy.loginfo("angle: %f", degrees(self.pose.theta))
                     vel_msg.linear.x = 0
                     vel_msg.linear.y = 0
                     vel_msg.linear.z = 0
                     vel_msg.angular.x = 0
                     vel_msg.angular.y = 0
-                    vel_msg.angular.z = radians(80) * abs(self.pose.theta)
+                    vel_msg.angular.z = radians(80) * abs(self.pose.theta - radians(90))
                     self.velocity_publisher.publish(vel_msg)
                     #self.rate.sleep()
                 # Stopping our robot after the movement is over.
                 vel_msg.angular.z = 0
                 self.velocity_publisher.publish(vel_msg) 
 
+            if direction == 'anti_left':
+                while abs(self.pose.theta) <= radians(180):
+                    rospy.loginfo("angle: %f", degrees(self.pose.theta))
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = radians(80) * abs(self.pose.theta - radians(180))
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
+                self.velocity_publisher.publish(vel_msg)
+
+            if direction == 'anti_down':
+                while abs(self.pose.theta) <= radians(270):
+                    rospy.loginfo("angle: %f", degrees(self.pose.theta))
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = radians(80) * abs(self.pose.theta - radians(270))
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
+                self.velocity_publisher.publish(vel_msg)
+            
+            if direction == 'clock_up':
+                while abs(self.pose.theta) >= radians(90):
+                    rospy.loginfo("angle: %f", degrees(self.pose.theta))
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = -(radians(80) * abs(self.pose.theta - radians(90)))
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
+                self.velocity_publisher.publish(vel_msg)
+            
+            if direction == 'clock_right':
+                while abs(self.pose.theta) >= 0.0001:
+                    rospy.loginfo("angle: %f", self.pose.theta)
+                    vel_msg.linear.x = 0
+                    vel_msg.linear.y = 0
+                    vel_msg.linear.z = 0
+                    vel_msg.angular.x = 0
+                    vel_msg.angular.y = 0
+                    vel_msg.angular.z = -(radians(80) * abs(self.pose.theta))
+                    self.velocity_publisher.publish(vel_msg)
+                    #self.rate.sleep()
+                # Stopping our robot after the movement is over.
+                vel_msg.angular.z = 0
+                self.velocity_publisher.publish(vel_msg)
+
+    def align_turtle_home(self,x_start, y_start):        
+        
+        vel_msg = Twist()
+
+        dx = self.pose.x - x_start
+        dy = self.pose.y - y_start
+        theta = atan2(dy,dx)
+        angle = degrees(theta)
+        if angle < 0:
+            angle = 360 + angle
+        
+        home_angle = radians(angle) - pi
+
+        
+        rospy.loginfo("home_angle: %f", degrees(home_angle))
+        while (degrees(self.pose.theta) >= (degrees(home_angle) - 0.0001)):
+            rospy.loginfo("angle: %f", degrees(self.pose.theta))
+            vel_msg.linear.x = 0
+            vel_msg.linear.y = 0
+            vel_msg.linear.z = 0
+            vel_msg.angular.x = 0
+            vel_msg.angular.y = 0
+            vel_msg.angular.z = -(radians(80) * abs(self.pose.theta - home_angle))
+            self.velocity_publisher.publish(vel_msg)
+            #self.rate.sleep()
+        # Stopping our robot after the movement is over.
+        vel_msg.angular.z = 0
+        self.velocity_publisher.publish(vel_msg)
+
+
+
+    
     def custom_rotate(self, relative_angle):
 
         vel_msg = Twist()
@@ -161,8 +254,10 @@ class TurtleBot_Dee:
         x0 = self.pose.x
         y0 = self.pose.y
         
+        
+        
         while True:
-            vel_msg.linear.x = 1
+            vel_msg.linear.x = 5
             vel_msg.linear.y = 0
             vel_msg.linear.z = 0
             vel_msg.angular.x = 0
@@ -171,11 +266,15 @@ class TurtleBot_Dee:
             self.velocity_publisher.publish(vel_msg)
             #self.rate.sleep()
             distance_moved = abs(sqrt(((self.pose.x - x0)**2) + ((self.pose.y - y0)**2)))
-            if not (distance_moved < distance):
+            rospy.loginfo("distance_moved: %f", distance_moved)
+
+            if not (distance_moved < (distance)):
                 break
 
         vel_msg.linear.x = 0    
         self.velocity_publisher.publish(vel_msg)
+
+
         
 
 if __name__ == '__main__':
@@ -185,23 +284,41 @@ if __name__ == '__main__':
 
         x_start = float(input("Set your x start: "))
         y_start = float(input("Set your y start: "))
+        user_a = float(input("Input a: "))
+        user_b = float(input("Input b: "))
+
+
+
 
         x = TurtleBot_Dee()
 
         distance_tolerance = 0.01
 
+        # x.align_turtle('left')
+        # x.custom_move(5)
+
+
         x.move2goal(x_start,y_start,distance_tolerance)
-        x.align_turtle(direction = "right")
+        x.align_turtle(direction = "anti_right")
 
-        user_a = float(input("Input a: "))
-        user_b = float(input("Input b: "))
-
-        current_pose = Pose()
-
-        point_1 = [x_start + user_a, y_start]
         x.custom_move(user_a)
-        #x.move2goal(point_1[0],point_1[1],distance_tolerance)
-        x.custom_rotate(90)
+        x.align_turtle(direction = "anti_up")
+
+        x.custom_move(user_b)
+        x.align_turtle(direction = "anti_left")
+
+        x.custom_move(user_a)
+        x.align_turtle(direction = "clock_up")
+
+        x.custom_move(user_b)
+        x.align_turtle(direction = "clock_right")
+
+        x.custom_move(user_a)
+
+        x.align_turtle_home(x_start, y_start)
+
+
+        x.move2goal(x_start,y_start,distance_tolerance)
 
         #point_2 = [x_start + user_a, y_start + user_b]
         # x.move2goal(point_2[0],point_2[1],distance_tolerance)
