@@ -6,6 +6,8 @@ As part of Autonomous exploration systems course.
 
 Closed loop implementation of turtlesim.
 
+[![Watch the video]](https://youtu.be/LtCl-he8TAo)
+
 ## Scripts
 
 - straight
